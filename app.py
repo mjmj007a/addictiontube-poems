@@ -40,6 +40,11 @@ def log_debug(message):
     with open("poem_search_debug_20250705.log", "a", encoding="utf-8") as f:
         f.write(message + "\n")
 
+# Health check route
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
+
 @app.route('/search_poems', methods=['GET'])
 def search_poems():
     query = request.args.get('q', '')

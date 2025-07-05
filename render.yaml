@@ -3,11 +3,11 @@ services:
     name: addictiontube-poems
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:${PORT}
     envVars:
       - key: OPENAI_API_KEY
-        sync: false  # Prompt for value in Render dashboard
+        sync: false
       - key: PINECONE_API_KEY
-        sync: false  # Prompt for value in Render dashboard
+        sync: false
       - key: PORT
-        value: 5000  # Explicitly set port to match app.py
+        value: 5000
