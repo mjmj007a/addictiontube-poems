@@ -47,13 +47,15 @@ def health_check():
 
 @app.route('/search_poems', methods=['GET'])
 def search_poems():
-    query = request.args.get('q', '')
-    category_id = request.args.get('category_id', '')
-    page = int(request.args.get('page', 1))
-    size = int(request.args.get('per_page', 5))
+    query = request.args.get('q', '').strip()  # Remove leading/trailing whitespace
+    category_id = request.args.get('category_id', '').strip()
+    page = max(1, int(request.args.get('page', 1)))  # Ensure page >= 1
+    size = max(1, int(request.args.get('per_page', 5)))  # Ensure size >= 1
 
-    if not query or not category_id:
-        return jsonify({"error": "Missing query or category_id"}), 400
+    if not category_id:
+        return jsonify({"error": "Missing category_id"}), 400
+    if not query:
+        return jsonify({"error": "Missing search query"}), 400  # Explicit error for blank query
 
     try:
         embedding_response = client.embeddings.create(
@@ -65,16 +67,18 @@ def search_poems():
         return jsonify({"error": "OpenAI embedding failed", "details": str(e)}), 500
 
     try:
+        top_k = max(100, size * page)  # Ensure enough results for pagination
         results = index.query(
             vector=query_embedding,
-            top_k=100,
+            top_k=top_k,
             include_metadata=True,
             filter={"category_id": {"$eq": category_id}}
         )
-        total = len(results.matches)
+        matches = results.matches
+        total = len(matches)
         start = (page - 1) * size
-        end = start + size
-        paginated = results.matches[start:end]
+        end = min(start + size, total)
+        paginated = matches[start:end] if start < total else []
 
         poems = []
         for m in paginated:
